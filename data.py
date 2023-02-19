@@ -12,6 +12,44 @@ def readCity():
     file.close()
     return city
 
+def describeWeather(windSpeed, pressure, precip, cloudCover, temp, humidity):
+    windy = False#
+    rainy = 0#
+    snowy = 0#
+    stormy = False#
+    cloudy = 0#
+    foggy = False#
+    weathers = [windy, rainy, snowy, stormy, cloudy, foggy]
+    forecast = []
+
+    if windSpeed > 24: windy = True
+    if precip < 0.1: rainy = 0
+    elif precip < 0.5 and temp > 0: rainy = 1
+    elif precip < 0.5 and not(temp > 0): snowy = 1
+    elif precip < 4 and (temp > 0): rainy = 2
+    elif precip < 4 and not(temp > 0): snowy = 2
+    elif precip < 8 and (temp > 0): rainy = 3
+    elif precip < 8 and not(temp > 0): snowy = 3
+    else:
+        if (pressure < 29) and (cloudCover > 70) and not(temp > 0): stormy = True
+        elif not(temp > 0): rainy = 3
+        else: snowy = 3
+    if cloudCover < 20: cloudy = 0
+    elif cloudCover < 50: cloudy = 1
+    elif cloudCover < 70: cloudy = 2
+    else: cloudy = 3
+    if (humidity > 95) and (pressure > 31) and (windSpeed < 10) and (cloudCover > 70): foggy = True
+
+    for weatherType in weathers:
+        if weatherType == True:
+            forecast.append(weatherType)
+        elif weatherType == 1:
+            forecast.append("slightly " + weatherType)
+        elif weatherType == 2:
+            forecast.append(weatherType)
+        elif weatherType == 3:
+            forecast.append("heavily " + weatherType)
+    return forecast
 
 def getAntipode(city):
     location = geolocator.geocode(city)
@@ -20,50 +58,35 @@ def getAntipode(city):
     lonA = lonO + 180
     return latA, lonA
 
-
-# thing:
-rain = ["Do you want to dance in the rain with me? I promise I'll keep you warm.", "I don't mind getting wet, as long as I'm standing next to you in the rain."]
-sun = ["Are you the sun? Because you are so beautiful it is blinding!", "The sun must be jealous of how hot you are."]
-cloud = ["The future seems cloudy, but I can see one with us."]
-snow = ["You are as unique as a snowflake."]
-hail = ["Will you HAIL me as your king/queen?"]
-wind = ["My hat just got blown away, but will you stay with me?"]
-foggy = [""]
-
 lat, lon = getAntipode(readCity())
 data = requests.get(f"http://api.weatherstack.com/current? access_key = d0a2334b8769a13ce02f5eef1b7c418e& query = {lat,lon}")
 data = json.dumps(data, set_keys=True, indent=4)
-#5 windSpeed
-#8 pressure
-#9 precipitation
-#10 humidity
-#11 cloud cover
-#12 feels like
-def describeWeather(windSpeed, pressure, precip, cloudCover, feelslike, humidity):
-    windy = False
-    rainy = 0#
-    snowy = 0#
-    stormy = False#
-    humid = False#
-    cloudy = 0#
-    foggy = False
-    temp = 2
+forecast = describeWeather(data[2][5], data[2][8], data[2][9], data[2][11], data[2][1], data[2][10])
+"""Order: windSpeed, pressure, precip, cloudCover, temp, humidity
+5 windSpeed
+8 pressure
+9 precipitation
+10 humidity
+11 cloud cover
+1 feels like"""
 
-    if windSpeed > 24: windy = True
-    if precip < 0.1: rainy = 0
-    elif precip < 0.5 and feelslike > 0: rainy = 1
-    elif precip < 0.5 and not(feelslike > 0): snowy = 1
-    elif precip < 4 and (feelslike > 0): rainy = 2
-    elif precip < 4 and not(feelslike > 0): snowy = 2
-    elif precip < 8 and (feelslike > 0): rainy = 3
-    elif precip < 8 and not(feelslike > 0): snowy = 3
-    else:
-        if (pressure < 29) and (cloudCover > 70) and not(feelslike > 0): stormy = True
-        else: rainy = 3
-    if cloudCover < 20: cloudy = 0
-    elif cloudCover < 50: cloudy = 1
-    elif cloudCover < 70: cloudy = 2
-    else: cloudy = 3
-    if (humidity > 95) and (pressure > 31) and (windSpeed < 10) and (cloudCover > 70): foggy = True
+import openai
 
-    
+openai.api_key = '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'
+
+prompt_weather = ""
+for weather in forecast: prompt_weather += (weather + ", ")
+
+response = openai.Completion.create(
+  model="text-davinci-003",
+  prompt=f"Write a pickup line for a {prompt_weather} day relating to that weather.",
+  temperature=0.7,
+  max_tokens=256,
+  top_p=1,
+  frequency_penalty=0,
+  presence_penalty=0
+)
+
+file = open("info.txt", "w")
+file.write(response)
+file.close()
