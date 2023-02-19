@@ -32,7 +32,7 @@ def describeWeather(windSpeed, pressure, precip, cloudCover, temp, humidity):
     forecast = []
 
     file = open("info.txt", "w")
-    file.write(str(temp))
+    file.write(str(temp) + " degrees Farenheit")
     file.close()
 
     if windSpeed > 24: windy = True
