@@ -99,7 +99,7 @@ forecast = describeWeather(
 1 feels like"""
 
 #AI pickup lines
-openai.api_key = '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'
+openai.api_key = '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'
 
 prompt_weather = ""
 for weather in forecast: prompt_weather += (weather + " ")
